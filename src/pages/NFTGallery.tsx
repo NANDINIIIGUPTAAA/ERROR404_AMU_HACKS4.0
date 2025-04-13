@@ -1,8 +1,10 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+import { useGreenNFT } from '@/hooks/useGreenNFT';
+import { useToast } from '@/components/ui/use-toast';
+import MintNFTModal from '@/components/MintNFTModal';
 import { 
   Filter, 
   Plus, 
@@ -85,6 +87,52 @@ const myNfts = [
 const NFTGalleryPage = () => {
   const [activeTab, setActiveTab] = useState('my-nfts');
   const [selectedNFT, setSelectedNFT] = useState<any>(null);
+  const [nfts, setNfts] = useState(myNfts);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isMintModalOpen, setIsMintModalOpen] = useState(false);
+  
+  const { isConnected, account, error, connect, getUserNFTs } = useGreenNFT();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (isConnected) {
+      loadUserNFTs();
+    }
+  }, [isConnected]);
+
+  const loadUserNFTs = async () => {
+    try {
+      setIsLoading(true);
+      const userNFTs = await getUserNFTs();
+      if (userNFTs && userNFTs.length > 0) {
+        setNfts(userNFTs);
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to load your NFTs. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleConnectWallet = async () => {
+    try {
+      await connect();
+      toast({
+        title: "Success",
+        description: "Wallet connected successfully!",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: error || "Failed to connect wallet",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleNFTClick = (nft: any) => {
     setSelectedNFT(nft);
@@ -92,6 +140,22 @@ const NFTGalleryPage = () => {
   
   const closeDetails = () => {
     setSelectedNFT(null);
+  };
+
+  const handleOpenMintModal = () => {
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsMintModalOpen(true);
+  };
+
+  const handleCloseMintModal = () => {
+    setIsMintModalOpen(false);
   };
 
   return (
@@ -107,14 +171,30 @@ const NFTGalleryPage = () => {
             </div>
             
             <div className="flex gap-3 mt-4 md:mt-0">
-              <Button variant="outline" className="border-eco-green text-eco-green hover:bg-eco-green hover:text-white">
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Marketplace
-              </Button>
-              <Button className="bg-eco-green hover:bg-eco-green-dark text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Mint New NFT
-              </Button>
+              {!isConnected ? (
+                <Button 
+                  variant="outline" 
+                  className="border-eco-green text-eco-green hover:bg-eco-green hover:text-white"
+                  onClick={handleConnectWallet}
+                >
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Connect Wallet
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" className="border-eco-green text-eco-green hover:bg-eco-green hover:text-white">
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Marketplace
+                  </Button>
+                  <Button 
+                    className="bg-eco-green hover:bg-eco-green-dark text-white"
+                    onClick={handleOpenMintModal}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Mint New NFT
+                  </Button>
+                </>
+              )}
             </div>
           </div>
           
@@ -142,61 +222,83 @@ const NFTGalleryPage = () => {
             </TabsList>
             
             <TabsContent value="my-nfts">
-              {/* Filter and Sort */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="text-eco-green border-eco-green">All</Button>
-                  <Button variant="ghost" size="sm">Carbon Offset</Button>
-                  <Button variant="ghost" size="sm">Energy</Button>
-                  <Button variant="ghost" size="sm">Water</Button>
-                  <Button variant="ghost" size="sm">Transport</Button>
-                </div>
-              </div>
-              
-              {/* NFT Gallery Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {myNfts.map((nft) => (
-                  <div 
-                    key={nft.id} 
-                    className="nft-card cursor-pointer"
-                    onClick={() => handleNFTClick(nft)}
+              {!isConnected ? (
+                <div className="text-center py-16">
+                  <p className="text-muted-foreground mb-4">Connect your wallet to view your NFTs</p>
+                  <Button 
+                    variant="outline" 
+                    className="border-eco-green text-eco-green hover:bg-eco-green hover:text-white"
+                    onClick={handleConnectWallet}
                   >
-                    <div className="nft-card-inner">
-                      <div className="aspect-square rounded-md overflow-hidden mb-3">
-                        <img
-                          src={nft.image}
-                          alt={nft.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      
-                      <h3 className="font-medium text-foreground mb-1">{nft.name}</h3>
-                      
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs bg-muted px-2 py-1 rounded-full">
-                          {nft.type}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {nft.issuedDate}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-eco-green font-medium">
-                          Impact: {nft.impact}
-                        </span>
-                        <span className="text-xs bg-eco-teal-light/30 text-eco-teal-dark px-2 py-1 rounded-full">
-                          {nft.rarity}
-                        </span>
-                      </div>
+                    <Wallet className="h-4 w-4 mr-2" />
+                    Connect Wallet
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Filter and Sort */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <Button variant="outline" size="sm" className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter
+                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="text-eco-green border-eco-green">All</Button>
+                      <Button variant="ghost" size="sm">Carbon Offset</Button>
+                      <Button variant="ghost" size="sm">Energy</Button>
+                      <Button variant="ghost" size="sm">Water</Button>
+                      <Button variant="ghost" size="sm">Transport</Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                  
+                  {/* NFT Gallery Grid */}
+                  {isLoading ? (
+                    <div className="text-center py-16">
+                      <p className="text-muted-foreground">Loading your NFTs...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {nfts.map((nft) => (
+                        <div 
+                          key={nft.id} 
+                          className="nft-card cursor-pointer"
+                          onClick={() => handleNFTClick(nft)}
+                        >
+                          <div className="nft-card-inner">
+                            <div className="aspect-square rounded-md overflow-hidden mb-3">
+                              <img
+                                src={nft.image}
+                                alt={nft.name}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                            
+                            <h3 className="font-medium text-foreground mb-1">{nft.name}</h3>
+                            
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs bg-muted px-2 py-1 rounded-full">
+                                {nft.type}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {nft.issuedDate}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-eco-green font-medium">
+                                Impact: {nft.impact}
+                              </span>
+                              <span className="text-xs bg-eco-teal-light/30 text-eco-teal-dark px-2 py-1 rounded-full">
+                                {nft.rarity}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </TabsContent>
             
             <TabsContent value="favorite">
@@ -329,6 +431,12 @@ const NFTGalleryPage = () => {
           </div>
         </div>
       )}
+
+      {/* Mint NFT Modal */}
+      <MintNFTModal 
+        isOpen={isMintModalOpen} 
+        onClose={handleCloseMintModal} 
+      />
     </div>
   );
 };

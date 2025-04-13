@@ -1,0 +1,23 @@
+{
+  "name": "Glowing Tree of Life",
+  "description": "A stunning, realistic NFT of a tree with glowing leaves, symbolizing sustainability and nature's magic.",
+  "image": "https://gateway.pinata.cloud/ipfs/bafkreigslyzlrzoddr7nceacprh3s4wi2ssecgorklouziqxufk56btgr4",
+  "attributes": [
+    {
+      "trait_type": "Theme",
+      "value": "Nature"
+    },
+    {
+      "trait_type": "Style",
+      "value": "Realistic"
+    },
+    {
+      "trait_type": "Effect",
+      "value": "Glowing Leaves"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Legendary"
+    }
+  ]
+}
