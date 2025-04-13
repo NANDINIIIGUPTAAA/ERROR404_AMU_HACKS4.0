@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,37 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        // Custom colors for our eco-friendly theme
+        eco: {
+          green: {
+            light: '#A5D6A7',
+            DEFAULT: '#2E7D32',
+            dark: '#1B5E20'
+          },
+          teal: {
+            light: '#B2DFDB',
+            DEFAULT: '#00796B',
+            dark: '#004D40'
+          },
+          blue: {
+            light: '#B3E0F2',
+            DEFAULT: '#0288D1',
+            dark: '#01579B'
+          },
+          brown: {
+            light: '#D7CCC8',
+            DEFAULT: '#795548',
+            dark: '#3E2723'
+          },
+          neutral: {
+            lightest: '#F5F7F9',
+            light: '#E0E0E0',
+            DEFAULT: '#9E9E9E',
+            dark: '#616161',
+            darkest: '#324B4A'
+          }
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,12 +115,27 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' }
+        },
+        'pulse-eco': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' }
+        }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
-			}
+				'accordion-up': 'accordion-up 0.2s ease-out',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-eco': 'pulse-eco 2s ease-in-out infinite'
+			},
+      backgroundImage: {
+        'gradient-eco': 'linear-gradient(135deg, #A5D6A7, #B2DFDB)',
+        'gradient-eco-dark': 'linear-gradient(135deg, #2E7D32, #00796B)',
+        'gradient-wave': "url('/wave-pattern.svg')"
+      }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
