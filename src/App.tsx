@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import NFTGallery from '@/pages/NFTGallery';
+import { Toaster } from './components/ui/toaster';
+import NFTGallery from './pages/NFTGallery';
 import Navbar from './components/Navbar';
 
 function App() {
