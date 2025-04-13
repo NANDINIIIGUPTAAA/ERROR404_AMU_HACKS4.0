@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useGreenNFT } from '@/hooks/useGreenNFT';
 import { useToast } from '@/components/ui/use-toast';
-import MintNFTModal from '@/components/MintNFTModal';
+import { MintNFTModal } from '@/components/MintNFTModal';
 import { 
   Filter, 
   Plus, 
@@ -15,6 +15,23 @@ import {
   Share2
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface NFTAttribute {
+  trait: string;
+  value: string;
+}
+
+interface NFT {
+  id: string;
+  name: string;
+  image: string;
+  type: string;
+  impact: string;
+  rarity: string;
+  issuedDate: string;
+  description: string;
+  attributes: NFTAttribute[];
+}
 
 // Sample NFT data
 const myNfts = [
@@ -85,56 +102,52 @@ const myNfts = [
 ];
 
 const NFTGalleryPage = () => {
-  const [activeTab, setActiveTab] = useState('my-nfts');
-  const [selectedNFT, setSelectedNFT] = useState<any>(null);
-  const [nfts, setNfts] = useState(myNfts);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("my-nfts");
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const { connect: connectWallet, mintNFT, loadNFTs, isConnected, address, nfts: userNfts, isLoading: isNFTLoading } = useGreenNFT();
   const [isMintModalOpen, setIsMintModalOpen] = useState(false);
-  
-  const { isConnected, account, error, connect, getUserNFTs } = useGreenNFT();
+  const [isMinting, setIsMinting] = useState(false);
   const { toast } = useToast();
   
-  useEffect(() => {
-    if (isConnected) {
-      loadUserNFTs();
+  const loadUserNFTs = useCallback(async () => {
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [isConnected]);
 
-  const loadUserNFTs = async () => {
     try {
-      setIsLoading(true);
-      const userNFTs = await getUserNFTs();
-      if (userNFTs && userNFTs.length > 0) {
-        setNfts(userNFTs);
-      }
+      await loadNFTs();
     } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to load your NFTs. Please try again.",
+        description: "Failed to load NFTs",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
-  
-  const handleConnectWallet = async () => {
+  }, [isConnected, loadNFTs, toast]);
+
+  const handleConnectWallet = useCallback(async () => {
     try {
-      await connect();
+      await connectWallet();
       toast({
         title: "Success",
         description: "Wallet connected successfully!",
       });
+      await loadUserNFTs();
     } catch (err) {
       toast({
         title: "Error",
-        description: error || "Failed to connect wallet",
+        description: "Failed to connect wallet",
         variant: "destructive",
       });
     }
-  };
+  }, [connectWallet, loadUserNFTs, toast]);
   
-  const handleNFTClick = (nft: any) => {
+  const handleNFTClick = (nft: NFT) => {
     setSelectedNFT(nft);
   };
   
@@ -143,7 +156,7 @@ const NFTGalleryPage = () => {
   };
 
   const handleOpenMintModal = () => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       toast({
         title: "Error",
         description: "Please connect your wallet first",
@@ -157,6 +170,43 @@ const NFTGalleryPage = () => {
   const handleCloseMintModal = () => {
     setIsMintModalOpen(false);
   };
+
+  const handleMintNFT = async (data: { name: string; description: string; image: File }) => {
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsMinting(true);
+      await mintNFT(data.name, data.description, data.image);
+      await loadUserNFTs();
+      toast({
+        title: "Success",
+        description: "NFT minted successfully!",
+      });
+      setIsMintModalOpen(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to mint NFT",
+        variant: "destructive",
+      });
+      console.error(err);
+    } finally {
+      setIsMinting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      loadUserNFTs();
+    }
+  }, [isConnected, loadUserNFTs]);
 
   return (
     <div className="min-h-screen">
@@ -252,13 +302,13 @@ const NFTGalleryPage = () => {
                   </div>
                   
                   {/* NFT Gallery Grid */}
-                  {isLoading ? (
+                  {isNFTLoading ? (
                     <div className="text-center py-16">
                       <p className="text-muted-foreground">Loading your NFTs...</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {nfts.map((nft) => (
+                      {userNfts.map((nft) => (
                         <div 
                           key={nft.id} 
                           className="nft-card cursor-pointer"
@@ -435,7 +485,8 @@ const NFTGalleryPage = () => {
       {/* Mint NFT Modal */}
       <MintNFTModal 
         isOpen={isMintModalOpen} 
-        onClose={handleCloseMintModal} 
+        onClose={() => setIsMintModalOpen(false)}
+        onMint={handleMintNFT}
       />
     </div>
   );

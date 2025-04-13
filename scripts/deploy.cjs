@@ -3,9 +3,10 @@ const hre = require("hardhat");
 async function main() {
   const GreenNFT = await hre.ethers.getContractFactory("GreenNFT");
   const nft = await GreenNFT.deploy();
-  await nft.deployed();
+  await nft.waitForDeployment();
 
-  console.log("GreenNFT deployed to:", nft.address);
+  const address = await nft.getAddress();
+  console.log("GreenNFT deployed to:", address);
 }
 
 main()

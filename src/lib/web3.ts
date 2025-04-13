@@ -1,38 +1,35 @@
 import { ethers } from 'ethers';
-import GreenNFTArtifact from '../../artifacts/contracts/GreenNFT.sol/GreenNFT.json';
 
-export const CONTRACT_ADDRESS = ''; // Will be filled after deployment
+export const CONTRACT_ADDRESS = '0x5fbdb2315678afecb367f032d93f642f64180aa3';
 
-export async function connectWallet() {
-  if (typeof window.ethereum === 'undefined') {
-    throw new Error('Please install MetaMask to use this application');
+const abi = [
+  "function mint(string memory tokenURI) public returns (uint256)",
+  "function tokenURI(uint256 tokenId) public view returns (string memory)",
+  "function tokensOfOwner(address owner) public view returns (uint256[] memory)",
+  "function ownerOf(uint256 tokenId) public view returns (address)"
+];
+
+export const getContract = (provider: ethers.Provider) => {
+  return new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+};
+
+export const connectWallet = async () => {
+  if (typeof window.ethereum !== 'undefined') {
+    try {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      return { provider, signer };
+    } catch (error) {
+      console.error('Error connecting to wallet:', error);
+      throw error;
+    }
+  } else {
+    throw new Error('Please install MetaMask or another Web3 wallet');
   }
+};
 
-  try {
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    return { provider, signer };
-  } catch (error) {
-    console.error('Error connecting to wallet:', error);
-    throw error;
-  }
-}
-
-export async function getContract(signer: ethers.Signer | null = null) {
-  if (!CONTRACT_ADDRESS) {
-    throw new Error('Contract address not set');
-  }
-
-  const provider = new ethers.BrowserProvider(window.ethereum);
-  return new ethers.Contract(
-    CONTRACT_ADDRESS,
-    GreenNFTArtifact.abi,
-    signer || provider
-  );
-}
-
-// Add type declarations for window.ethereum
+// Add TypeScript declarations for window.ethereum
 declare global {
   interface Window {
     ethereum: any;
